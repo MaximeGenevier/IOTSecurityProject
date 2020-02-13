@@ -9,7 +9,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
-
+from sklearn.metrics import accuracy_score, mean_absolute_error
 
 classifiers = {
     "logistical_regression": {
@@ -52,19 +52,26 @@ def train_classifier():
     allurldata = np.array(pd.DataFrame(pd.read_csv(allurls, ',', error_bad_lines=False)))  # converting to a numpy array
     random.shuffle(allurldata)  # shuffling
 
-    y = [d[1] for d in allurldata]  # all labels
+    y = [int(d[1] == "good") for d in allurldata]  # all labels
     corpus = [d[0] for d in allurldata]  # all urls corresponding to a label (either good or bad)
 
     for classifier_key in list(classifiers):
         classifier = classifiers[classifier_key]["classifier"]
-        classifiers[classifier_key]["vectorizer"] = TfidfVectorizer(tokenizer=getTokens)  # get a vector for each url but use our customized tokenizer
+        classifiers[classifier_key]["vectorizer"] = TfidfVectorizer(
+            tokenizer=getTokens)  # get a vector for each url but use our customized tokenizer
         x = classifiers[classifier_key]["vectorizer"].fit_transform(corpus)  # get the x vector
 
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,
-                                                        random_state=42)  # split into training and testing set 80/20 ratio
+                                                            random_state=42)  # split into training and testing set 80/20 ratio
 
         classifier.fit(x_train, y_train)
-        print('Classifier : ' + classifier_key + ' --- Score : ' + str(classifier.score(x_test, y_test)))  # pring the score. It comes out to be 98%
+
+        score = classifier.score(x_test, y_test)
+        accuracy = accuracy_score(y, classifier.predict(x))
+        mean_absolute = mean_absolute_error(y, classifier.predict(x))
+
+        print('Classifier : %s --- Score : %f --- Accuracy score : %f --- Mean absolute error : %f'
+              % (classifier_key, score, accuracy, mean_absolute))  # pring the score. It comes out to be 98%
 
 
 @app.route('/<classifier_type>/<path:path>')
