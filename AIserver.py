@@ -1,5 +1,6 @@
 import math
 import os
+import pickle
 import random
 from collections import Counter
 import numpy as np
@@ -7,13 +8,24 @@ import pandas as pd
 from flask import Flask
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
 classifiers = {
     "logistical_regression": {
         "classifier": LogisticRegression(max_iter=500),
+        "vectorizer": None
+    },
+    "k_neighbors": {
+        "classifier": KNeighborsClassifier(),
+        "vectorizer": None
+    },
+    "multinomial": {
+        "classifier": MultinomialNB(),
         "vectorizer": None
     },
     "decision_tree_classifier": {
@@ -63,8 +75,13 @@ def train_classifier():
 
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,
                                                             random_state=42)  # split into training and testing set 80/20 ratio
-
-        classifier.fit(x_train, y_train)
+        # ckeck if "classifier_key".trained exist
+        path = "./" + classifier_key + ".trained"
+        if os.path.exists(path):
+            classifier = pickle.load(open(path, "rb+"))
+        else:
+            classifier.fit(x_train, y_train)
+            pickle.dump(classifier, open(path, "wb+"))
 
         score = classifier.score(x_test, y_test)
         accuracy = accuracy_score(y, classifier.predict(x))
